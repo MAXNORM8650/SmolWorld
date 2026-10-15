@@ -5,15 +5,6 @@ Model family: dense MM diffusion predictor, multistream (2 RGB cams + pointmap
 `docs/SCALING_LADDER_N4_N9.md`, `docs/SCALING_LAW_MEASUREMENT.md`. Metric: **`val_video`**, the per-token held-out
 cross-entropy of the RGB stream (nats/token), as the measurement doc prescribes; not the blended `loss`.
 
-Two sets of figures:
-- **Study figures (Oct 1–3 snapshot)** in `figures/scaling_study/oct_snapshot/`: the Chinchilla IsoFLOP plots
-  (`chinchilla_flops*`), model size, PSNR, isoFLOP and shape plots (`scaling_*`). They are copied from
-  `results/local/`, with their scripts (`make_chinchilla_flops.py`, `make_scaling_modelsize.py`,
-  `make_scaling_extra.py`). They were made mid-training.
-- **Update (2026-10-15)** in `figures/scaling_study/fig*.png`: the same wandb runs pulled again after N4/N5/N6
-  finished, into `results/scaling_study/wandb_snapshot_2026-10-15.json`. Made by `figures/make_scaling_study.py`,
-  which also writes `results/scaling_study/summary.json`.
-
 ## Summary
 
 1. **Bigger models win only after enough tokens.** At 0.52B tokens the order is reversed (N4 201M: 5.78, N9 6.0B:
@@ -29,7 +20,7 @@ Two sets of figures:
    with a 90% bootstrap interval of [0.02, 0.26] and RMSE 0.11, five times the eval noise. A fit on the small rungs
    alone predicts N4–N7 at 4.92–5.14, but they reach 4.42–4.61. The two halves of the ladder do not sit on one curve.
 4. **The study is incomplete.** Only N4, N5 and N6 finished their planned schedule. N7 changed its LR schedule four
-   times, N8/N9 stopped at 5k/3.5k steps, the 1-GPU long runs crashed at 10k–40k steps, N3 has no long-run point,
+   times, N8/N9 stopped at 5k/3.5k steps, the 1-GPU long runs gpu-limit ended at 10k–40k steps, N3 has no long-run point,
    and the "20N" runs actually got 12.4N tokens.
 
 ## The ladder
@@ -41,19 +32,19 @@ same data, global batch and val set.
 
 | Rung | hidden × layers | N | Learning Rate | Planned steps | Reached | Tokens | Last val_video | State |
 |---|---|---|---|---|---|---|---|---|
-| S1 | 128 × 6 | 1.2M | 1.04e-3 | 100k | 40k | 5.94B | 6.119 | crashed |
-| S2 | 192 × 8 | 3.5M | 8.49e-4 | 100k | 30k* | 4.46B | 5.505 | crashed |
-| N1 | 256 × 8 | 6.3M | 7.35e-4 | 100k | 30k | 4.46B | 5.293 | crashed |
-| S4 | 320 × 10 | 12.3M | 6.57e-4 | 100k | 20k* | 2.97B | 5.472 | crashed |
-| S5 | 384 × 12 | 21.2M | 6.00e-4 | 100k | 20k | 2.97B | 5.211 | crashed |
-| N2 | 512 × 10 | 31.5M | 5.20e-4 | 100k | 10k* | 1.49B | 5.368 | crashed |
-| N3 | 768 × 12 | 84.9M | 4.24e-4 | 100k | 5k, no val | 0.74B | – | crashed |
+| S1 | 128 × 6 | 1.2M | 1.04e-3 | 100k | 40k | 5.94B | 6.119 | gpu-limit ended |
+| S2 | 192 × 8 | 3.5M | 8.49e-4 | 100k | 30k* | 4.46B | 5.505 | gpu-limit ended |
+| N1 | 256 × 8 | 6.3M | 7.35e-4 | 100k | 30k | 4.46B | 5.293 | gpu-limit ended |
+| S4 | 320 × 10 | 12.3M | 6.57e-4 | 100k | 20k* | 2.97B | 5.472 | gpu-limit ended |
+| S5 | 384 × 12 | 21.2M | 6.00e-4 | 100k | 20k | 2.97B | 5.211 | gpu-limit ended |
+| N2 | 512 × 10 | 31.5M | 5.20e-4 | 100k | 10k* | 1.49B | 5.368 | gpu-limit ended |
+| N3 | 768 × 12 | 84.9M | 4.24e-4 | 100k | 5k, no val | 0.74B | – | gpu-limit ended |
 | **N4** | 1024 × 16 | 201M | 3.67e-4 | 36k | **36k** | 5.35B | **3.682** | finished |
-| **N5** | 1536 × 24 | 679M | 3.00e-4 | 36k, then 100k | **36k**, then 63.5k | 9.43B | 3.384 @36k, 3.345 @63.5k | 36k finished; extension crashed |
+| **N5** | 1536 × 24 | 679M | 3.00e-4 | 36k, then 100k | **36k**, then 63.5k | 9.43B | 3.384 @36k, 3.345 @63.5k | 36k finished; extension gpu-limit ended |
 | **N6** | 2048 × 24 | 1.21B | 2.60e-4 | 36k | **36k** | 5.35B | **3.356** | finished |
-| N7 | 2560 × 30 | 2.36B | 2.32e-4 | 18k / 36k (switched 4×) | 21.9k | 3.19B | 3.721 | crashed |
-| N8 | 3072 × 32 | 3.62B | 2.12e-4 | 18k | 5.45k | 0.74B | 5.594 | crashed |
-| N9 | 4096 × 30 | 6.04B | 1.84e-4 | 18k | 3.8k | 0.52B | 6.233 | crashed |
+| N7 | 2560 × 30 | 2.36B | 2.32e-4 | 18k / 36k (switched 4×) | 21.9k | 3.19B | 3.721 | gpu-limit ended |
+| N8 | 3072 × 32 | 3.62B | 2.12e-4 | 18k | 5.45k | 0.74B | 5.594 | gpu-limit ended |
+| N9 | 4096 × 30 | 6.04B | 1.84e-4 | 18k | 3.8k | 0.52B | 6.233 | gpu-limit ended |
 
 \* The run reached a few thousand steps further, but the 1-GPU runs log val only every 10k steps. Every row comes from
 stitching resumed fragments: for each step, the latest fragment wins. 36 fragments in total, listed with their
@@ -216,7 +207,7 @@ Total compute per finished run (6ND / with attention): N4 6.5e18 / 1.1e19, N5 (3
 Seven short runs (`wl_scale1g_*` created 2026-10-01, plus `S1_20Nfine` on 2026-10-02) were meant to train each small rung to
 D = 20N on its own short cosine schedule. Their step counts were planned with **~240k tokens per step**; the real
 figure is **148,576**. As a result they saw **D = 12.4N**, not 20N. They are also far from converged (S1: 10.56 after
-90 steps; N2: 6.53 after 2.6k steps; N3 crashed at 2.1k of 7.1k). They are left out of the curves and fits above,
+90 steps; N2: 6.53 after 2.6k steps; N3 gpu-limit ended at 2.1k of 7.1k). They are left out of the curves and fits above,
 and should not be used as Chinchilla-optimal points.
 
 ## How the measurement works (and its limits)
@@ -227,3 +218,13 @@ and should not be used as Chinchilla-optimal points.
   ≥0.07 (3 sd) are reliable; absolute values describe only these 8 clips.
 - **Data:** the rungs see 0.5–9.4B tokens of the same 4-suite LIBERO set, repeated over several epochs (the exact count was not measured here). Repeated tokens
   are worth less than new ones, so the token axis here is not "unique data".
+
+Two sets of figures:
+- **Study figures (Oct 1–3 snapshot)** in `figures/scaling_study/oct_snapshot/`: the Chinchilla IsoFLOP plots
+  (`chinchilla_flops*`), model size, PSNR, isoFLOP and shape plots (`scaling_*`). They are copied from
+  `results/local/`, with their scripts (`make_chinchilla_flops.py`, `make_scaling_modelsize.py`,
+  `make_scaling_extra.py`). They were made mid-training.
+- **Update (2026-10-15)** in `figures/scaling_study/fig*.png`: the same wandb runs pulled again after N4/N5/N6
+  finished, into `results/scaling_study/wandb_snapshot_2026-10-15.json`. Made by `figures/make_scaling_study.py`,
+  which also writes `results/scaling_study/summary.json`.
+
