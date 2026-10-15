@@ -1,6 +1,6 @@
 # Scaling study: world-model validation loss vs model size, tokens and compute
 
-Model family: dense Chameleon-MM-RoPE predictor on the frozen Cosmos-DV4x8x8 codec, multistream (2 RGB cams + pointmap
+Model family: dense MM diffusion predictor, multistream (2 RGB cams + pointmap
 + VQ-BeT action + DINOv2 patch conditioning), 4-suite LIBERO-depth, trained from scratch. Setup and rules:
 `docs/SCALING_LADDER_N4_N9.md`, `docs/SCALING_LAW_MEASUREMENT.md`. Metric: **`val_video`**, the per-token held-out
 cross-entropy of the RGB stream (nats/token), as the measurement doc prescribes; not the blended `loss`.
@@ -39,7 +39,7 @@ global batch 16 (148,576 tokens per step, 9,286 tokens per sample), seed 0. N = 
 The 8-GPU ladder (N4–N9, warm-up 1k) and the 1-GPU ladder (S1–N3, bs 2 × ga 8, warm-up 2k, 100k-step schedule) use the
 same data, global batch and val set.
 
-| Rung | hidden × layers | N | LR | Planned steps | Reached | Tokens | Last val_video | State |
+| Rung | hidden × layers | N | Learning Rate | Planned steps | Reached | Tokens | Last val_video | State |
 |---|---|---|---|---|---|---|---|---|
 | S1 | 128 × 6 | 1.2M | 1.04e-3 | 100k | 40k | 5.94B | 6.119 | crashed |
 | S2 | 192 × 8 | 3.5M | 8.49e-4 | 100k | 30k* | 4.46B | 5.505 | crashed |
@@ -227,22 +227,3 @@ and should not be used as Chinchilla-optimal points.
   ≥0.07 (3 sd) are reliable; absolute values describe only these 8 clips.
 - **Data:** the rungs see 0.5–9.4B tokens of the same 4-suite LIBERO set, repeated over several epochs (the exact count was not measured here). Repeated tokens
   are worth less than new ones, so the token axis here is not "unique data".
-- **No task success:** none of the ladder checkpoints has been evaluated on LIBERO. For model size vs success rate,
-  see `artifacts/libero_model_sizes/README.md`. That table is not controlled: it compares different checkpoints,
-  data and steps.
-
-## What it would take to get a law fit for the paper
-
-1. **Never change `cfg.steps` on resume.** If a run needs more steps, start a new, separate run (or use a
-   warmup-stable-decay schedule, which can be extended). This is the cause of the N5 and N7 problems.
-2. **Finish N7** on a single 36k schedule, and **get N8/N9 to at least 10k steps.** With those, the 1.49B-token slice
-   reaches 6B parameters.
-3. **Run N3 (85M)** on the 8-GPU setup, with the 8-GPU warm-up, to bridge the two ladders. It costs less than half of N4's compute.
-4. **Anneal 2–3 token budgets per rung** (Chinchilla approach 2). For example, anneal N4–N6 at 9k/18k/36k steps by
-   branching from one checkpoint into short decay runs. That gives true L(N, D) endpoints for the
-   `scripts/scaling/fit_scaling.py` fit.
-5. **Evaluate on more validation clips** (e.g. `val_batches` 32 = 64 clips) for the final evals. This is a config
-   change only. A fixed mask seed for val would also remove the mask noise, but that is a code change and needs your
-   approval.
-6. **Evaluate success rate for N4/N5/N6 at 36k on LIBERO**, with one inference profile, to check whether the 0.32-nat
-   gain shows up as task success.
