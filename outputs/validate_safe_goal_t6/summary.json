@@ -1,0 +1,10 @@
+{
+  "run": "validate_safe_goal_t6",
+  "profile": "safe",
+  "suite": "libero_goal",
+  "episodes": 10,
+  "successes": 6,
+  "sr": 0.6,
+  "decision_ms_mean_excl_first": 451.079085307096,
+  "s_per_400_actions": 22.5539542653548
+}

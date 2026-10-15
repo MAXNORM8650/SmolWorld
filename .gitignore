@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+outputs/*/
+outputs/*.log
+outputs/*.json
+!outputs/README.md
+!outputs/validate_*/

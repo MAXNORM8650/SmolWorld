@@ -1,0 +1,20 @@
+{
+  "cam_high": {
+    "fx": 618.0386719675123,
+    "fy": 618.0386719675123,
+    "cx": 256.0,
+    "cy": 256.0,
+    "width": 512,
+    "height": 512,
+    "robosuite_camera_name": "agentview"
+  },
+  "cam_left_wrist": {
+    "fx": 333.6256954473487,
+    "fy": 333.6256954473487,
+    "cx": 256.0,
+    "cy": 256.0,
+    "width": 512,
+    "height": 512,
+    "robosuite_camera_name": "robot0_eye_in_hand"
+  }
+}

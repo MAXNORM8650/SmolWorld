@@ -1,0 +1,23 @@
+{
+  "profile": {
+    "name": "safe",
+    "backend": "sdpa",
+    "compile": true,
+    "compile_scope": "predictor",
+    "cuda_graphs": false,
+    "seq_cache": true,
+    "kv_cache": true,
+    "exec_steps": 8,
+    "hold": 1,
+    "gripper_mode": "rescale_flip",
+    "binarize_gripper": true,
+    "measured": {
+      "sr_4suite": 93.5,
+      "ms_per_decision": 443,
+      "s_per_400_actions": 22.1
+    }
+  },
+  "suite": "libero_goal",
+  "tasks": "6",
+  "trials": 10
+}

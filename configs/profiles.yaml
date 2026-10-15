@@ -1,0 +1,64 @@
+# Inference profiles for SmolWorld (wl_ms_dcp_4suite_chunk16_warm_ciai_100k).
+# Every number below is measured on LIBERO (4 suites x 100 episodes, RTX A6000); source:
+# worldlab/benchmarking/INFERENCE_STUDY.md. ms_per_decision = in-loop steady model time; 400-action time = 400/E x ms.
+#
+# Fields consumed by inference/smolworld_policy.py:
+#   backend        sdpa | trt | flex           attention kernel
+#   compile        torch.compile (predictor scope); the transformer itself is compiled only for sdpa, or trt on transformers<5
+#   cuda_graphs    capture the transformer forward (no effect on the KV-cache path)
+#   seq_cache      cache the fixed sequence layout (always on: -45% latency)
+#   kv_cache       frame-prefix KV cache for the action decode (INFER_CACHE=1)
+#   exec_steps     actions executed per decision before re-observing (E)
+#   hold           repeat each executed action `hold` control steps
+#   gripper_mode   rescale_flip maps the model's {0,1} gripper to the env's {+1,-1}; binarize snaps to +/-1
+
+default: fast
+
+profiles:
+  fast:             # selected: fastest configuration accepted on SR
+    backend: sdpa
+    compile: true
+    compile_scope: predictor
+    cuda_graphs: false
+    seq_cache: true
+    kv_cache: true
+    exec_steps: 12
+    hold: 1
+    gripper_mode: rescale_flip
+    binarize_gripper: true
+    measured: {sr_4suite: 93.8, ms_per_decision: 443, s_per_400_actions: 14.8}
+    note: "Actions identical to TRT + KV cache (200/200 windows). Spatial SR 90.3 (pooled 300 ep) vs 95.3 root: committing 12 actions without re-observing loses episodes on occluded targets."
+
+  safe:             # same stack, re-observes every 8 actions
+    backend: sdpa
+    compile: true
+    compile_scope: predictor
+    cuda_graphs: false
+    seq_cache: true
+    kv_cache: true
+    exec_steps: 8
+    hold: 1
+    gripper_mode: rescale_flip
+    binarize_gripper: true
+    measured: {sr_4suite: 93.5, ms_per_decision: 443, s_per_400_actions: 22.1}
+
+  reference:        # the original deploy stack (no KV cache); highest greedy SR
+    backend: trt
+    compile: true
+    compile_scope: predictor
+    cuda_graphs: true
+    seq_cache: true
+    kv_cache: false
+    exec_steps: 8
+    hold: 1
+    gripper_mode: rescale_flip
+    binarize_gripper: true
+    measured: {sr_4suite: 94.3, ms_per_decision: 543, s_per_400_actions: 27.2}
+    note: "543 ms with transformers 5.17 (transformer compile skipped on TRT). With transformers 4.43 (worldlab-eval-venv) the transformer compiles: 438 ms; SR there 92.75, replicate pending."
+
+# Not available through SmolWorldPolicy (closed-loop LIBERO eval only, via scripts/eval_libero.sh):
+eval_only:
+  max_sr_grounded_mpc:   # imagines future frames before acting; highest SR, ~4-6x slower
+    flags: "--mpc_grounded --mpc_grounded_act_scale 0.05 --attention_backend flex --seq_cache --replan_steps 8 --exec_steps 8 --hold 1 --gripper_mode rescale_flip --binarize_gripper"
+    measured: {sr_4suite: 95.0, episodes: 800, ms_per_decision: 1717, s_per_400_actions: 85.9}
+    note: "Fixes occluded-target tasks (goal t6 50 -> 95%) but breaks others (goal t9 95 -> 45%)."
